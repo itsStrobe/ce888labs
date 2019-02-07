@@ -430,5 +430,5 @@ if __name__ == "__main__":
     for i in range(num_games):
         moves = np.append(moves, UCTPlayGame(game = game, save_moves = True), axis=0)
     
-    np.savetxt(file + ".csv", moves, delimiter=",", fmt="%s")
+    np.savetxt("./data" + file + ".csv", moves, delimiter=",", fmt="%s")
         
