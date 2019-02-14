@@ -17,6 +17,8 @@ def p_value(sample1, sample2, reps, size):
             
     return count / reps
 
+# It was stated in the lecture that the size parameter
+# refers to the t_obs value and not the sample size.
 def power(sample1, sample2, reps, size, alpha):
     count = 0
     
