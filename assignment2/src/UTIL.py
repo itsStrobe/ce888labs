@@ -1,6 +1,28 @@
+import os
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
+
+# Label Encoding
+le = LabelEncoder()
+le.fit(["_", "X", "Y"])
+
+def EncodeMatrix(examples):
+    rows, cols = examples.shape
+
+    examples = np.reshape(examples, rows*cols)
+    examples = le.transform(examples)
+    examples = np.reshape(examples, (rows, cols))
+
+    return examples
+
+def DecodeMatrix(examples):
+    rows, cols = examples.shape
+    examples = np.reshape(examples, rows*cols)
+    examples = le.inverse_transform(examples)
+    examples = np.reshape(examples, (rows, cols))
+
+    return examples
 
 def ReadTrainData(fileName='./data/OXO_dataset.csv', asNumpy=True, sample_size=None):
     df = pd.read_csv(fileName, sep=',', header=0)
@@ -17,19 +39,32 @@ def ReadTrainData(fileName='./data/OXO_dataset.csv', asNumpy=True, sample_size=N
     else:
         return df_features, df_targets
 
-def EncodeMatrix(le, examples):
-    rows, cols = examples.shape
+def GetInvalidMoves(states, moves):
+    invStates = []
+    invMoves  = []
+    for state, move in zip(states, moves):
+        if(state[move] != '_'):
+            print(state[move])
+            invStates.append(state)
+            invMoves.append(move)
 
-    examples = np.reshape(examples, rows*cols)
-    examples = le.transform(examples)
-    examples = np.reshape(examples, (rows, cols))
+    return np.array(invStates), np.array(invMoves)
 
-    return examples
+def SaveExamplesAsDataFrame(X, y, fileName, dirName='./'):
+    if not os.path.exists(dirName): os.makedirs(dirName)
 
-def DecodeMatrix(le, examples):
-    rows, cols = examples.shape
-    examples = np.reshape(examples, rows*cols)
-    examples = le.inverse_transform(examples)
-    examples = np.reshape(examples, (rows, cols))
+    MovesDict = {"[0:0]": X[:, 0].tolist(), 
+                 "[0:1]": X[:, 1].tolist(),
+                 "[0:2]": X[:, 2].tolist(),
+                 "[1:0]": X[:, 3].tolist(),
+                 "[1:1]": X[:, 4].tolist(),
+                 "[1:2]": X[:, 5].tolist(),
+                 "[2:0]": X[:, 6].tolist(),
+                 "[2:1]": X[:, 7].tolist(),
+                 "[2:2]": X[:, 8].tolist(),
+                 "Move" : y.tolist()}
 
-    return examples
+    MovesPd = pd.DataFrame(MovesDict)
+    MovesPd.to_csv(dirName + fileName)
+
+    return MovesPd

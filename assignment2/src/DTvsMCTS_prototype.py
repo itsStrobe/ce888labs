@@ -22,10 +22,10 @@
 # Modified by Jose Juan Zavala Iglesias for CE888 Assignment at The University of Essex (2019)
 
 from math import *
-import random
 import sys
+import random
 import numpy as np
-
+from DTAgent import AgentMoveSelector
 from sklearn.tree import DecisionTreeClassifier
 
 # ----- UTIL ----- #
@@ -40,11 +40,6 @@ def transform_OXO_state(turn, state):
     new_state = [state_to_string[elem][turn - 1] for elem in state]
     
     return new_state
-
-def LoadDTModel(modelFileName):
-    # TODO
-    
-    return DT_model
     
 def GetWinnerMoves(winner, match_moves):
     # TODO
@@ -231,12 +226,12 @@ def UCT(rootstate, itermax, verbose = False):
             node = node.parentNode
 
     # Output some information about the tree - can be omitted
-    if (verbose): print rootnode.TreeToString(0)
-    else: print rootnode.ChildrenToString()
+    if (verbose): print(rootnode.TreeToString(0))
+    else: print(rootnode.ChildrenToString())
 
     return sorted(rootnode.childNodes, key = lambda c: c.visits)[-1].move # return the move that was most visited
                 
-def UCTPlayGame(DT_agent, save_moves = False):
+def UCTPlayGame(NewPlayer, save_moves = False):
     """ Play a sample game between two UCT players where each player gets a different number 
         of UCT iterations (= simulations = tree nodes).
     """
@@ -244,15 +239,15 @@ def UCTPlayGame(DT_agent, save_moves = False):
     moves_performed = np.array([], dtype=str).reshape(0, 10)
         
     while (state.GetMoves() != []):
-        print str(state)
+        print(str(state))
         if state.playerJustMoved == 2:
             # Player 1 - X
             DT_state = transform_OXO_state(1, state.board)
-            m = DT_agent.predict([DT_state])
+            m = NewPlayer.MakeMove(np.array(DT_state))
         else:
             # Player 2 - O
             m = UCT(rootstate = state, itermax = 1000, verbose = False)
-        print "Best Move: " + str(m) + "\n"
+        print("Best Move: " + str(m) + "\n")
         
         if save_moves:
             current_state = transform_OXO_state(3 - state.playerJustMoved, state.board)
@@ -268,12 +263,12 @@ def UCTPlayGame(DT_agent, save_moves = False):
     winner = 0
     
     if state.GetResult(state.playerJustMoved) == 1.0:
-        print "Player " + str(state.playerJustMoved) + " wins!"
+        print("Player " + str(state.playerJustMoved) + " wins!")
         winner = state.playerJustMoved
     elif state.GetResult(state.playerJustMoved) == 0.0:
-        print "Player " + str(3 - state.playerJustMoved) + " wins!"
+        print("Player " + str(3 - state.playerJustMoved) + " wins!")
         winner = 3 - state.playerJustMoved
-    else: print "Nobody wins!"
+    else: print("Nobody wins!")
     
     if save_moves:
         return winner, moves_performed
@@ -293,14 +288,15 @@ if __name__ == "__main__":
     loss = 0
     
     # DecisionTreeClassifier
-    DT_agent = LoadDTModel(modelFileName)
+    NewPlayer = AgentMoveSelector()
+    NewPlayer.LoadModel(modelFileName)
     
     moves = np.array(["[0:0]", "[0:1]", "[0:2]", "[1:0]", "[1:1]", "[1:2]", "[2:0]", "[2:1]", "[2:2]", "Move"], dtype=str).reshape(1, 10)
     
     for i in range(num_games):
-        winner, match_moves = UCTPlayGame(DT_agent, save_moves = True)
-        winning_moves = GetWinnerMoves(winner, match_moves)
-        moves = np.append(moves, winning_moves, axis=0)
+        winner, match_moves = UCTPlayGame(NewPlayer, save_moves = True)
+        # winning_moves = GetWinnerMoves(winner, match_moves)
+        # moves = np.append(moves, winning_moves, axis=0)
         
         if(winner == 0):
             draw += 1
