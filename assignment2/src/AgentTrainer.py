@@ -1,9 +1,10 @@
 import sys
 import numpy as np
 import pandas as pd
-from DTAgent import AgentMoveSelector
+from DTMoveSelector import AgentMoveSelector
 from UTIL import GetInvalidMoves
 from UTIL import ReadTrainData
+from UTIL import SaveExamplesAsDataFrame
 
 # CONSTANTS
 RES_DIR = "./AgentTrainingResults/"

@@ -25,7 +25,7 @@ from math import *
 import sys
 import random
 import numpy as np
-from DTAgent import AgentMoveSelector
+from DTMoveSelector import AgentMoveSelector
 from sklearn.tree import DecisionTreeClassifier
 
 # ----- UTIL ----- #
@@ -40,11 +40,6 @@ def transform_OXO_state(turn, state):
     new_state = [state_to_string[elem][turn - 1] for elem in state]
     
     return new_state
-    
-def GetWinnerMoves(winner, match_moves):
-    # TODO
-    
-    return winning_moves
     
 # ----- MCTS Implementation ----- #
 
@@ -121,12 +116,13 @@ class OXOState:
         """ Get the game result from the viewpoint of playerjm. 
         """
         for (x,y,z) in [(0,1,2),(3,4,5),(6,7,8),(0,3,6),(1,4,7),(2,5,8),(0,4,8),(2,4,6)]:
-            if self.board[x] == self.board[y] == self.board[z]:
+            if self.board[x] != 0 and (self.board[x] == self.board[y] == self.board[z]):
                 if self.board[x] == playerjm:
                     return 1.0
                 else:
                     return 0.0
         if self.GetMoves() == []: return 0.5 # draw
+        return -1.0 # Game is not over yet
         assert False # Should not be possible to get here
 
     def __repr__(self):
@@ -193,127 +189,85 @@ class Node:
              s += str(c) + "\n"
         return s
 
+class Agent_Random:
+    def UCT(self, rootstate, itermax, verbose = False):
+        """ Conduct a UCT search for itermax iterations starting from rootstate.
+            Return the best move from the rootstate.
+            Assumes 2 alternating players (player 1 starts), with game results in the range [0.0, 1.0]."""
 
-def UCT(rootstate, itermax, verbose = False):
-    """ Conduct a UCT search for itermax iterations starting from rootstate.
-        Return the best move from the rootstate.
-        Assumes 2 alternating players (player 1 starts), with game results in the range [0.0, 1.0]."""
+        rootnode = Node(state = rootstate)
 
-    rootnode = Node(state = rootstate)
+        for i in range(itermax):
+            node = rootnode
+            state = rootstate.Clone()
 
-    for i in range(itermax):
-        node = rootnode
-        state = rootstate.Clone()
+            # Select
+            while node.untriedMoves == [] and node.childNodes != []: # node is fully expanded and non-terminal
+                node = node.UCTSelectChild()
+                state.DoMove(node.move)
 
-        # Select
-        while node.untriedMoves == [] and node.childNodes != []: # node is fully expanded and non-terminal
-            node = node.UCTSelectChild()
-            state.DoMove(node.move)
+            # Expand
+            if node.untriedMoves != []: # if we can expand (i.e. state/node is non-terminal)
+                m = random.choice(node.untriedMoves) 
+                state.DoMove(m)
+                node = node.AddChild(m,state) # add child and descend tree
 
-        # Expand
-        if node.untriedMoves != []: # if we can expand (i.e. state/node is non-terminal)
-            m = random.choice(node.untriedMoves) 
-            state.DoMove(m)
-            node = node.AddChild(m,state) # add child and descend tree
+            # Rollout - this can often be made orders of magnitude quicker using a state.GetRandomMove() function
+            while state.GetMoves() != []: # while state is non-terminal
+                state.DoMove(random.choice(state.GetMoves()))
 
-        # Rollout - this can often be made orders of magnitude quicker using a state.GetRandomMove() function
-        while state.GetMoves() != []: # while state is non-terminal
-            state.DoMove(random.choice(state.GetMoves()))
+            # Backpropagate
+            while node != None: # backpropagate from the expanded node and work back to the root node
+                node.Update(state.GetResult(node.playerJustMoved)) # state is terminal. Update node with result from POV of node.playerJustMoved
+                node = node.parentNode
 
-        # Backpropagate
-        while node != None: # backpropagate from the expanded node and work back to the root node
-            node.Update(state.GetResult(node.playerJustMoved)) # state is terminal. Update node with result from POV of node.playerJustMoved
-            node = node.parentNode
+        # Output some information about the tree - can be omitted
+        if (verbose): print(rootnode.TreeToString(0))
+        else: print(rootnode.ChildrenToString())
 
-    # Output some information about the tree - can be omitted
-    if (verbose): print(rootnode.TreeToString(0))
-    else: print(rootnode.ChildrenToString())
+        return sorted(rootnode.childNodes, key = lambda c: c.visits)[-1].move # return the move that was most visited
 
-    return sorted(rootnode.childNodes, key = lambda c: c.visits)[-1].move # return the move that was most visited
-                
-def UCTPlayGame(NewPlayer, save_moves = False):
-    """ Play a sample game between two UCT players where each player gets a different number 
-        of UCT iterations (= simulations = tree nodes).
-    """
-    state = OXOState() # uncomment to play OXO
-    moves_performed = np.array([], dtype=str).reshape(0, 10)
-        
-    while (state.GetMoves() != []):
-        print(str(state))
-        if state.playerJustMoved == 2:
-            # Player 1 - X
-            DT_state = transform_OXO_state(1, state.board)
-            m = NewPlayer.MakeMove(np.array(DT_state))
-        else:
-            # Player 2 - O
-            m = UCT(rootstate = state, itermax = 1000, verbose = False)
-        print("Best Move: " + str(m) + "\n")
-        
-        if save_moves:
-            current_state = transform_OXO_state(3 - state.playerJustMoved, state.board)
-            current_state.append(m)
-            moves_performed = np.append(moves_performed, [current_state], axis=0)
+class Agent_DT:
+    def __init__(self, moveSelectorName):
+        self.rolloutMoveSelector = AgentMoveSelector()
+        self.rolloutMoveSelector.LoadModel(moveSelectorName)
 
-        state.DoMove(m)
-    
-    # Winner:
-    # 0 -> Draw
-    # 1 -> X (DT)
-    # 2 -> Y (MCTS)
-    winner = 0
-    
-    if state.GetResult(state.playerJustMoved) == 1.0:
-        print("Player " + str(state.playerJustMoved) + " wins!")
-        winner = state.playerJustMoved
-    elif state.GetResult(state.playerJustMoved) == 0.0:
-        print("Player " + str(3 - state.playerJustMoved) + " wins!")
-        winner = 3 - state.playerJustMoved
-    else: print("Nobody wins!")
-    
-    if save_moves:
-        return winner, moves_performed
-        
-    return winner
+    def UCT(self, rootstate, itermax, verbose = False):
+        """ Conduct a UCT search for itermax iterations starting from rootstate.
+            Return the best move from the rootstate.
+            Assumes 2 alternating players (player 1 starts), with game results in the range [0.0, 1.0]."""
 
-if __name__ == "__main__":
-    """ Play a given number of games to the end
-        DT vs MCTS
-    """
-    modelFileName = str(sys.argv[1])
-    num_games = int(sys.argv[2])
-    save_file = str(sys.argv[3])
-    
-    wins = 0
-    draw = 0
-    loss = 0
-    
-    # DecisionTreeClassifier
-    NewPlayer = AgentMoveSelector()
-    NewPlayer.LoadModel(modelFileName)
-    
-    moves = np.array(["[0:0]", "[0:1]", "[0:2]", "[1:0]", "[1:1]", "[1:2]", "[2:0]", "[2:1]", "[2:2]", "Move"], dtype=str).reshape(1, 10)
-    
-    for i in range(num_games):
-        winner, match_moves = UCTPlayGame(NewPlayer, save_moves = True)
-        # winning_moves = GetWinnerMoves(winner, match_moves)
-        # moves = np.append(moves, winning_moves, axis=0)
-        
-        if(winner == 0):
-            draw += 1
-        
-        if(winner == 1):
-            wins += 1
-            
-        if(winner == 2):
-            loss += 1
-    
-    np.savetxt("./data/" + save_file + ".csv", moves, delimiter=",", fmt="%s")
-    
-    print("Matches played:", num_games)
-    print("Wins:", wins)
-    print("Draws:", draw)
-    print("Losses:", loss)
-    print("-------------")
-    print("DT Win Rate:", wins / num_games)
-    print("DT No-Loss Rate:", (wins + draw) / num_games)
-        
+        rootnode = Node(state = rootstate)
+
+        for i in range(itermax):
+            node = rootnode
+            state = rootstate.Clone()
+
+            # Select
+            while node.untriedMoves == [] and node.childNodes != []: # node is fully expanded and non-terminal
+                node = node.UCTSelectChild()
+                state.DoMove(node.move)
+
+            # Expand
+            if node.untriedMoves != []: # if we can expand (i.e. state/node is non-terminal)
+                m = random.choice(node.untriedMoves) 
+                state.DoMove(m)
+                node = node.AddChild(m,state) # add child and descend tree
+
+            # Rollout - this can often be made orders of magnitude quicker using a state.GetRandomMove() function
+            while state.GetMoves() != []: # while state is non-terminal
+                if(random.uniform(0, 1) > 0.1):
+                    state.DoMove(self.rolloutMoveSelector.MakeMove(np.array(transform_OXO_state(3 - state.playerJustMoved, state.board))))
+                else:
+                    state.DoMove(random.choice(state.GetMoves()))
+
+            # Backpropagate
+            while node != None: # backpropagate from the expanded node and work back to the root node
+                node.Update(state.GetResult(node.playerJustMoved)) # state is terminal. Update node with result from POV of node.playerJustMoved
+                node = node.parentNode
+
+        # Output some information about the tree - can be omitted
+        if (verbose): print(rootnode.TreeToString(0))
+        else: print(rootnode.ChildrenToString())
+
+        return sorted(rootnode.childNodes, key = lambda c: c.visits)[-1].move # return the move that was most visited

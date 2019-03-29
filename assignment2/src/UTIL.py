@@ -1,26 +1,22 @@
 import os
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import OneHotEncoder
 
-# Label Encoding
-le = LabelEncoder()
-le.fit(["_", "X", "Y"])
+# One Hot Encoding
+labels = np.array([['X','X','X','X','X','X','X','X','X'],
+                   ['Y','Y','Y','Y','Y','Y','Y','Y','Y'],
+                   ['_','_','_','_','_','_','_','_','_']])
+enc = OneHotEncoder(handle_unknown='ignore', dtype=np.int, sparse=False)
+enc.fit(labels)
 
 def EncodeMatrix(examples):
-    rows, cols = examples.shape
-
-    examples = np.reshape(examples, rows*cols)
-    examples = le.transform(examples)
-    examples = np.reshape(examples, (rows, cols))
+    examples = enc.transform(examples)
 
     return examples
 
 def DecodeMatrix(examples):
-    rows, cols = examples.shape
-    examples = np.reshape(examples, rows*cols)
-    examples = le.inverse_transform(examples)
-    examples = np.reshape(examples, (rows, cols))
+    examples = enc.inverse_transform(examples)
 
     return examples
 

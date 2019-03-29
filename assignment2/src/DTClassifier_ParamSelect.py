@@ -26,8 +26,8 @@ if not os.path.exists(RES_DIR): os.makedirs(RES_DIR)
 X, y = ReadTrainData(fileName="./data/OXO_NewDataset.csv")
 
 # Set DT to test between Gini Impurity and Information Gain metrics and different max levels (avoid overfitting but check for invalid moves)
-dt = DecisionTreeClassifier(splitter="best", min_impurity_decrease=0)
-params = {'criterion':['gini', 'entropy'], 'max_depth':[8, 9, 10, 11]}
+dt = DecisionTreeClassifier(splitter="best", min_impurity_decrease=0.)
+params = {'criterion':['gini', 'entropy'], 'max_depth':[11, 13, 15, 17, 19, 21, 23, 25, 27, 29]}
 
 
 # Grid Search using 10-Fold Cross Validation

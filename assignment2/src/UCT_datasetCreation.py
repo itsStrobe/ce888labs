@@ -219,8 +219,8 @@ def UCT(rootstate, itermax, verbose = False):
             node = node.parentNode
 
     # Output some information about the tree - can be omitted
-    if (verbose): print rootnode.TreeToString(0)
-    else: print rootnode.ChildrenToString()
+    if (verbose): print(rootnode.TreeToString(0))
+    else: print(rootnode.ChildrenToString())
 
     return sorted(rootnode.childNodes, key = lambda c: c.visits)[-1].move # return the move that was most visited
                 
@@ -246,10 +246,10 @@ def UCTPlayGame(game = 1, save_moves = False):
 
         state.DoMove(m)
     if state.GetResult(state.playerJustMoved) == 1.0:
-        print "Player " + str(state.playerJustMoved) + " wins!"
+        print("Player " + str(state.playerJustMoved) + " wins!")
     elif state.GetResult(state.playerJustMoved) == 0.0:
-        print "Player " + str(3 - state.playerJustMoved) + " wins!"
-    else: print "Nobody wins!"
+        print("Player " + str(3 - state.playerJustMoved) + " wins!")
+    else: print("Nobody wins!")
     
     if save_moves:
         return moves_performed
