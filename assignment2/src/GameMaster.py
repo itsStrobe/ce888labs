@@ -25,7 +25,7 @@ def UCTPlayGame(Player1, Player2, save_moves = False):
         print(str(state))
         if state.playerJustMoved == 2:
             # Player 1 - X
-            m = Player1.UCT(state, 100, verbose = False)
+            m = Player1.UCT(state, 1000, verbose = False)
         else:
             # Player 2 - O
             m = Player2.UCT(state, 1000, verbose = False)
@@ -107,13 +107,13 @@ def Play(player1_ModelName, player2_ModelName, num_games, save_file, saveOnlyWin
     if(savePerformance):
         if not os.path.exists('./performance/'): os.makedirs('./performance/')
         with open('./performance/' + player1_ModelName + '_performance.txt', 'w') as file:  # Use file to refer to the file object
-            file.write("Matches played: "  + str(num_games))
-            file.write("Wins: "            + str(wins))
-            file.write("Draws: "           + str(draw))
-            file.write("Losses: "          + str(loss))
-            file.write("-----------------------------")
-            file.write("DT Win Rate: "     + str(wins / num_games))
-            file.write("DT No-Loss Rate: " + str((wins + draw) / num_games))
+            file.write("Matches played: "  + str(num_games) + '\n')
+            file.write("Wins: "            + str(wins)      + '\n')
+            file.write("Draws: "           + str(draw)      + '\n')
+            file.write("Losses: "          + str(loss)      + '\n')
+            file.write("-----------------------------\n")
+            file.write("DT Win Rate: "     + str(wins / num_games)          + '\n')
+            file.write("DT No-Loss Rate: " + str((wins + draw) / num_games) + '\n')
 
 if __name__ == "__main__":
     """ Play a given number of games to the end

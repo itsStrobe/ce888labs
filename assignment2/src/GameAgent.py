@@ -257,7 +257,10 @@ class Agent_DT:
             # Rollout - this can often be made orders of magnitude quicker using a state.GetRandomMove() function
             while state.GetMoves() != []: # while state is non-terminal
                 if(random.uniform(0, 1) > 0.1):
-                    state.DoMove(self.rolloutMoveSelector.MakeMove(np.array(transform_OXO_state(3 - state.playerJustMoved, state.board))))
+                    move = self.rolloutMoveSelector.MakeMove(np.array(transform_OXO_state(3 - state.playerJustMoved, state.board)))
+                    if(move < 0):
+                        move = random.choice(state.GetMoves())
+                    state.DoMove(move)
                 else:
                     state.DoMove(random.choice(state.GetMoves()))
 

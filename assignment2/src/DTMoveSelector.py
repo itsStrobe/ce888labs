@@ -49,8 +49,8 @@ class AgentMoveSelector:
         if(state[move] == '_'):
             return move
         else:
-            if(verbose): print("WARNING: DT returned invalid move. Making first valid move.")
-            return np.where(state == '_')[0][0]
+            if(verbose): print("WARNING: DT returned invalid move. Returning -1.")
+            return -1 # PREV: np.where(state == '_')[0][0]
 
     def Predict(self, X):
         return self.model.predict(EncodeMatrix(X))
