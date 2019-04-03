@@ -1,0 +1,7 @@
+Matches played: 10
+Wins: 3
+Draws: 5
+Losses: 2
+-----------------------------
+DT Win Rate: 0.3
+DT No-Loss Rate: 0.8

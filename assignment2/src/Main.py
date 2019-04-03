@@ -4,9 +4,11 @@ from GameMaster import Play
 from DTMoveSelector import AgentMoveSelector
 
 # CONSTANTS
+DT_ITER      = 100
+MCTS_ITER    = 1000
 MCTS_TESTS   = 10
-PREV_TESTS   = 1
-MATCHES_MCTS = 100
+PREV_TESTS   = 10
+MATCHES_MCTS = 1000
 MATCHES_PREV = 10
 DATA_ROOT    = './data/'
 OG_DATA      = './data/OXO_dataset.csv'
@@ -27,7 +29,7 @@ Player = AgentMoveSelector()
 Player.TrainModel(X_, y_)
 Player.SaveModel(MDL_PREFIX + str(IT))
 
-Play(MDL_PREFIX + str(IT), MCTS_NAME, MATCHES_MCTS, DATA_PREFIX + str(IT))
+Play(MDL_PREFIX + str(IT), MCTS_NAME, MATCHES_MCTS, DATA_PREFIX + str(IT), iter_ply1=DT_ITER, iter_ply2=MCTS_ITER)
 IT += 1
 
 start_time = time.time()
@@ -35,11 +37,11 @@ for i in range(PREV_TESTS):
     for j in range(MCTS_TESTS):
         newPlayer = MDL_PREFIX + str(IT)
         CreateNewPlayer(DATA_ROOT + DATA_PREFIX + str(IT-1) + '.csv', newPlayer)
-        Play(newPlayer, MCTS_NAME, MATCHES_MCTS, DATA_PREFIX + str(IT))
+        Play(newPlayer, MCTS_NAME, MATCHES_MCTS, DATA_PREFIX + str(IT), iter_ply1=DT_ITER, iter_ply2=MCTS_ITER)
         IT += 1
     
     newModel = MDL_PREFIX + str(IT-1)
     oldModel = MDL_PREFIX + str(IT-11)
-    Play(newModel, oldModel, MATCHES_PREV, newModel + 'vs' + oldModel, savePerformance=True)
+    Play(newModel, oldModel, MATCHES_PREV, newModel + 'vs' + oldModel, savePerformance=True, iter_ply1=DT_ITER, iter_ply2=DT_ITER)
     
 print("Elapsed Time:", time.time() - start_time)

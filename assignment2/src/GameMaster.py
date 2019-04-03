@@ -14,7 +14,7 @@ def GetWinnerMoves(winner, match_moves):
     
     return winning_moves
 
-def UCTPlayGame(Player1, Player2, save_moves = False):
+def UCTPlayGame(Player1, Player2, save_moves = False, iter_ply1=100, iter_ply2=100):
     """ Play a sample game between two UCT players where each player gets a different number 
         of UCT iterations (= simulations = tree nodes).
     """
@@ -25,10 +25,10 @@ def UCTPlayGame(Player1, Player2, save_moves = False):
         print(str(state))
         if state.playerJustMoved == 2:
             # Player 1 - X
-            m = Player1.UCT(state, 1000, verbose = False)
+            m = Player1.UCT(state, iter_ply1, verbose = False)
         else:
             # Player 2 - O
-            m = Player2.UCT(state, 1000, verbose = False)
+            m = Player2.UCT(state, iter_ply2, verbose = False)
         print("Best Move for Player " + str(3 - state.playerJustMoved) + ": " + str(m) + "\n")
         
         if save_moves:
@@ -57,7 +57,7 @@ def UCTPlayGame(Player1, Player2, save_moves = False):
         
     return winner
 
-def Play(player1_ModelName, player2_ModelName, num_games, save_file, saveOnlyWins=False, savePerformance=False):
+def Play(player1_ModelName, player2_ModelName, num_games, save_file, saveOnlyWins=False, savePerformance=False, iter_ply1=100, iter_ply2=100):
     wins = 0
     draw = 0
     loss = 0
@@ -77,7 +77,7 @@ def Play(player1_ModelName, player2_ModelName, num_games, save_file, saveOnlyWin
     moves = np.array(["[0:0]", "[0:1]", "[0:2]", "[1:0]", "[1:1]", "[1:2]", "[2:0]", "[2:1]", "[2:2]", "Move"], dtype=str).reshape(1, 10)
     
     for i in range(num_games):
-        winner, match_moves = UCTPlayGame(Player1, Player2, save_moves = True)
+        winner, match_moves = UCTPlayGame(Player1, Player2, save_moves = True, iter_ply1=iter_ply1, iter_ply2=iter_ply2)
         if(saveOnlyWins):
             if(winner > 0):
                 winning_moves = GetWinnerMoves(winner, match_moves)
