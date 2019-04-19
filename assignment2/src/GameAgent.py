@@ -230,8 +230,8 @@ class Agent_Random:
 
 class Agent_DT:
     def __init__(self, moveSelectorName):
-        self.rolloutMoveSelector = ApprenticePolicy()
-        self.rolloutMoveSelector.LoadModel(moveSelectorName)
+        self.apprenticePolicy = ApprenticePolicy()
+        self.apprenticePolicy.LoadModel(moveSelectorName)
 
     def UCT(self, rootstate, itermax, verbose = False):
         """ Conduct a UCT search for itermax iterations starting from rootstate.
@@ -259,7 +259,7 @@ class Agent_DT:
             while state.GetMoves() != []: # while state is non-terminal
                 # Use Apprentice policy 90% of the time, while the remaining 10% is random play
                 if(random.uniform(0, 1) > 0.1):
-                    move = self.rolloutMoveSelector.MakeMove(np.array(transform_OXO_state(3 - state.playerJustMoved, state.board)))
+                    move = self.apprenticePolicy.MakeMove(np.array(transform_OXO_state(3 - state.playerJustMoved, state.board)))
                     # If predicted move is invalid, perform random move.
                     if(move < 0):
                         move = random.choice(state.GetMoves())
