@@ -1,3 +1,10 @@
+# Author: Jose Juan Zavala Iglesias
+# Created as part of requirements for CE888 Assignment at The University of Essex (2019)
+# This file will serve as a framework for Tic-Tac-Toe play against two agents
+
+# It receives the names of the two models that are competing. If 'Random' is selected, random policy will be used.
+# Both models play a given number of games, and the game states are saved in the target file.  
+
 import os
 import sys
 import numpy as np

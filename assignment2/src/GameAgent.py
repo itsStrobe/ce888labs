@@ -17,15 +17,16 @@
 
 # ATTENTION:
 # This is a modification of the file described above.
-# This file is a first, UNFINISHED, version of a DT vs MCTS program for the game of OXO (Tic-Tac-Toe)
-# It will load a pre-trained DT model to play against the implemented MCTS agent
-# Modified by Jose Juan Zavala Iglesias for CE888 Assignment at The University of Essex (2019)
+# This file defines two versions of our Expert for Tic-Tac-Toe play
+# The Agent_Random Expert is a simple implementation of MCTS with Random Policy
+# The Agent_DT Expert is our implementation of MCTS using a Decision Tree as our Apprentice Policy
+# Modified by Jose Juan Zavala Iglesias as part of requirements for CE888 Assignment at The University of Essex (2019)
 
 from math import *
 import sys
 import random
 import numpy as np
-from DTMoveSelector import AgentMoveSelector
+from DTMoveSelector import ApprenticePolicy
 from sklearn.tree import DecisionTreeClassifier
 
 # ----- UTIL ----- #
@@ -229,7 +230,7 @@ class Agent_Random:
 
 class Agent_DT:
     def __init__(self, moveSelectorName):
-        self.rolloutMoveSelector = AgentMoveSelector()
+        self.rolloutMoveSelector = ApprenticePolicy()
         self.rolloutMoveSelector.LoadModel(moveSelectorName)
 
     def UCT(self, rootstate, itermax, verbose = False):
@@ -256,8 +257,10 @@ class Agent_DT:
 
             # Rollout - this can often be made orders of magnitude quicker using a state.GetRandomMove() function
             while state.GetMoves() != []: # while state is non-terminal
+                # Use Apprentice policy 90% of the time, while the remaining 10% is random play
                 if(random.uniform(0, 1) > 0.1):
                     move = self.rolloutMoveSelector.MakeMove(np.array(transform_OXO_state(3 - state.playerJustMoved, state.board)))
+                    # If predicted move is invalid, perform random move.
                     if(move < 0):
                         move = random.choice(state.GetMoves())
                     state.DoMove(move)

@@ -17,13 +17,16 @@
 
 # ATTENTION:
 # This is a modification of the file described above.
-# This edited program will store the moves played by the implemented MCTS agent for the game of OXO (Tic-Tac-Toe) 
-# Modified by Jose Juan Zavala Iglesias as part of requirements for CE888 Assignment at The University of Essex (2019)
+# This file is a first, UNFINISHED, version of a DT vs DT program for the game of OXO (Tic-Tac-Toe)
+# It will load the latest pre-trained DT model to play against an older DT model
+# Modified by Jose Juan Zavala Iglesias for CE888 Assignment at The University of Essex (2019)
 
 from math import *
 import random
 import sys
 import numpy as np
+
+from sklearn.tree import DecisionTreeClassifier
 
 # ----- UTIL ----- #
 
@@ -37,6 +40,16 @@ def transform_OXO_state(turn, state):
     new_state = [state_to_string[elem][turn - 1] for elem in state]
     
     return new_state
+
+def LoadDTModel(modelFileName):
+    # TODO
+    
+    return DT_model
+    
+def GetWinnerMoves(winner, match_moves):
+    # TODO
+    
+    return winning_moves
     
 # ----- MCTS Implementation ----- #
 
@@ -113,13 +126,12 @@ class OXOState:
         """ Get the game result from the viewpoint of playerjm. 
         """
         for (x,y,z) in [(0,1,2),(3,4,5),(6,7,8),(0,3,6),(1,4,7),(2,5,8),(0,4,8),(2,4,6)]:
-            if self.board[x] != 0 and (self.board[x] == self.board[y] == self.board[z]):
+            if self.board[x] == self.board[y] == self.board[z]:
                 if self.board[x] == playerjm:
                     return 1.0
                 else:
                     return 0.0
         if self.GetMoves() == []: return 0.5 # draw
-        return -1.0 # Game is not over yet
         assert False # Should not be possible to get here
 
     def __repr__(self):
@@ -219,25 +231,31 @@ def UCT(rootstate, itermax, verbose = False):
             node = node.parentNode
 
     # Output some information about the tree - can be omitted
-    if (verbose): print(rootnode.TreeToString(0))
-    else: print(rootnode.ChildrenToString())
+    if (verbose): print rootnode.TreeToString(0)
+    else: print rootnode.ChildrenToString()
 
     return sorted(rootnode.childNodes, key = lambda c: c.visits)[-1].move # return the move that was most visited
                 
-def UCTPlayGame(game = 1, save_moves = False):
+def UCTPlayGame(DT_agent_new, DT_agent_old, save_moves = False):
     """ Play a sample game between two UCT players where each player gets a different number 
         of UCT iterations (= simulations = tree nodes).
     """
     state = OXOState() # uncomment to play OXO
     moves_performed = np.array([], dtype=str).reshape(0, 10)
         
-    while (state.GetResult(state.playerJustMoved) == -1.0):
-        # print str(state)
-        if state.playerJustMoved == 1:
-            m = UCT(rootstate = state, itermax = 1000, verbose = False) # play with values for itermax and verbose = True
+    while (state.GetMoves() != []):
+        print str(state)
+        if state.playerJustMoved == 2:
+            # Player 1 - X
+            # Latest DT Model
+            DT_state = transform_OXO_state(1, state.board)
+            m = DT_agent_new.predict([DT_state])
         else:
-            m = UCT(rootstate = state, itermax = 100, verbose = False)
-        # print "Best Move: " + str(m) + "\n"
+            # Player 2 - O
+            # Older DT Model
+            DT_state = transform_OXO_state(1, state.board)
+            m = DT_agent_old.predict([DT_state])
+        print "Best Move: " + str(m) + "\n"
         
         if save_moves:
             current_state = transform_OXO_state(3 - state.playerJustMoved, state.board)
@@ -245,25 +263,66 @@ def UCTPlayGame(game = 1, save_moves = False):
             moves_performed = np.append(moves_performed, [current_state], axis=0)
 
         state.DoMove(m)
+    
+    # Winner:
+    # 0 -> Draw
+    # 1 -> X (DT - Latest)
+    # 2 -> Y (DT - Previous)
+    winner = 0
+    
     if state.GetResult(state.playerJustMoved) == 1.0:
-        print("Player " + str(state.playerJustMoved) + " wins!")
+        print "Player " + str(state.playerJustMoved) + " wins!"
+        winner = state.playerJustMoved
     elif state.GetResult(state.playerJustMoved) == 0.0:
-        print("Player " + str(3 - state.playerJustMoved) + " wins!")
-    else: print("Nobody wins!")
+        print "Player " + str(3 - state.playerJustMoved) + " wins!"
+        winner = 3 - state.playerJustMoved
+    else: print "Nobody wins!"
     
     if save_moves:
-        return moves_performed
+        return winner, moves_performed
+        
+    return winner
 
 if __name__ == "__main__":
-    """ Play a single game to the end using UCT for both players. 
+    """ Play a given number of games to the end
+        DT vs DT
     """
-    num_games = int(sys.argv[1])
-    save_file = str(sys.argv[2])
+    latestModelFileName = str(sys.argv[1])
+    olderModelFileName = str(sys.argv[2])
+    num_games = int(sys.argv[3])
+    save_file = str(sys.argv[4])
+    
+    wins = 0
+    draw = 0
+    loss = 0
+    
+    # DecisionTreeClassifier
+    DT_agent_new = LoadDTModel(latestModelFileName)
+    DT_agent_old = LoadDTModel(olderModelFileName)
     
     moves = np.array(["[0:0]", "[0:1]", "[0:2]", "[1:0]", "[1:1]", "[1:2]", "[2:0]", "[2:1]", "[2:2]", "Move"], dtype=str).reshape(1, 10)
     
     for i in range(num_games):
-        moves = np.append(moves, UCTPlayGame(save_moves = True), axis=0)
+        winner, match_moves = UCTPlayGame(DT_agent_new, DT_agent_old, save_moves = True)
+        winning_moves = GetWinnerMoves(winner, match_moves)
+        moves = np.append(moves, winning_moves, axis=0)
+        
+        if(winner == 0):
+            draw += 1
+        
+        if(winner == 1):
+            wins += 1
+            
+        if(winner == 2):
+            loss += 1
     
     np.savetxt("./data/" + save_file + ".csv", moves, delimiter=",", fmt="%s")
+    
+    print("Matches played:", num_games)
+    print("Wins:", wins)
+    print("Draws:", draw)
+    print("Losses:", loss)
+    print("-------------")
+    print("DT Win Rate:", wins / num_games)
+    print("DT No-Loss Rate:", (wins + draw) / num_games)
         

@@ -1,7 +1,11 @@
+# Author: Jose Juan Zavala Iglesias
+# Created as part of requirements for CE888 Assignment at The University of Essex (2019)
+# This file is an implementation of the algorithm Expert Iteration by Anthony et al. (2017)
+
 import time
 from UTIL import ReadTrainData
 from GameMaster import Play
-from DTMoveSelector import AgentMoveSelector
+from DTMoveSelector import ApprenticePolicy
 
 # CONSTANTS
 DT_ITER      = 100
@@ -19,13 +23,13 @@ IT           = 0
 
 def CreateNewPlayer(dataset, playerName):
     X, y = ReadTrainData(fileName=dataset)
-    Player = AgentMoveSelector()
+    Player = ApprenticePolicy()
     Player.TrainModel(X, y)
     Player.SaveModel(playerName)
 
 # First model with original dataset (MCTS vs MCTS)
 X_, y_ = ReadTrainData(fileName=OG_DATA, sample_size=100)
-Player = AgentMoveSelector()
+Player = ApprenticePolicy()
 Player.TrainModel(X_, y_)
 Player.SaveModel(MDL_PREFIX + str(IT))
 

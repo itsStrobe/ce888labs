@@ -1,7 +1,7 @@
 # Author: Jose Juan Zavala Iglesias
 # Created as part of requirements for CE888 Assignment at The University of Essex (2019)
-# This file will provide a Agent object with the capabilities of being trained, loading 
-# an existing agent, and saving its own state.
+# This file will provide a Decision Tree model object (Apprentice Policy) with the capabilities of being trained, loading 
+# an existing model, and saving its own state.
 
 # It defaults to the best parameters determined with the DTClassifier_ParamSelect.py script,
 # under the assumption that the parameters extracted from the inital dataset will work for
@@ -22,9 +22,9 @@ CLF_DIR   = "./Models/"
 MDL_EXT   = ".joblib"
 DOT_EXT   = ".dot"
 CRITERION = "entropy"
-MAX_DEPTH = None
+MAX_DEPTH = 13
 
-class AgentMoveSelector:
+class ApprenticePolicy:
     def __init__(self, criterion=CRITERION, max_depth=MAX_DEPTH):
         self.model = DecisionTreeClassifier(splitter="best", min_impurity_decrease=0., criterion=criterion, max_depth=max_depth)
 
